@@ -1,0 +1,16 @@
+version: 3.8.0
+services:
+  hello:
+    restart: always
+    build: 
+      context: hello-service
+      dockerfile: Dockerfile
+    ports:
+      - "8080:5001"
+  world:
+    restart: always
+    build: 
+      context: world-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:5002"

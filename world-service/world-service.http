@@ -1,0 +1,6 @@
+@world_service_HostAddress = http://localhost:5282
+
+GET {{world_service_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

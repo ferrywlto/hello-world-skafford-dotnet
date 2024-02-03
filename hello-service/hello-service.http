@@ -1,0 +1,6 @@
+@hello_service_HostAddress = http://localhost:5015
+
+GET {{hello_service_HostAddress}}/hello/Ferry
+Accept: application/json
+
+###
