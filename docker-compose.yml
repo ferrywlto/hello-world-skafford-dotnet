@@ -7,6 +7,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:5001"
+    environment:
+      - WORLD_SERVICE_ADDRESS=http://world:5002
+      
   world:
     restart: always
     build: 

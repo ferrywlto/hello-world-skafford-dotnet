@@ -16,8 +16,24 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
+configurationBuilder.AddEnvironmentVariables();
+var config = configurationBuilder.Build();
+var worldServiceAddress = config["WORLD_SERVICE_ADDRESS"];
+
 app.MapGet("/hello/{name}", (string name) => $"Hello {name}!")
 .WithName("Hello")
+.WithOpenApi();
+
+app.MapGet("/hello/world", async () =>
+{
+    Console.WriteLine($"{worldServiceAddress}");
+
+    var client = new HttpClient();
+    var result = await client.GetStringAsync($"{worldServiceAddress}/world");
+    return $"Response from World: {result}";
+})
+.WithName("HelloWorld")
 .WithOpenApi();
 
 app.Run();
