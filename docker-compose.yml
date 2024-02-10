@@ -1,5 +1,7 @@
 version: 3.8.0
 services:
+  database:
+    restart: always
   hello:
     restart: always
     build: 

@@ -147,3 +147,8 @@ Namesapce is to isolate resources deployed to the same kubernetes cluster, typic
 - Deployments manage the lifecycle of Pods, ensuring that the desired number of replicas are running.
 - Services provide stable endpoints for accessing Pods, allowing intra-cluster communication. They can be of different types, such as ClusterIP for internal access or LoadBalancer/NodePort for external access.
 - Ingress resources define rules for routing external HTTP/HTTPS traffic to Services within the cluster based on criteria such as hostnames, paths, or request attributes.
+
+## Skaffold
+
+Now we have the service code in .NET, we have the manifest files and deploy to Kubernetes manually via `kubectl apply` command.
+However we need to build and upload docker image to registy before Kubernetes can pull it. Skaffold can automate and bridge the process.
