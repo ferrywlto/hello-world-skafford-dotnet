@@ -1,21 +1,25 @@
 version: 3.8.0
 services:
-  database:
-    restart: always
-  hello:
-    restart: always
-    build: 
-      context: hello-service
-      dockerfile: Dockerfile
-    ports:
-      - "8080:5001"
-    environment:
-      - WORLD_SERVICE_ADDRESS=http://world:5002
-      
   world:
     restart: always
     build: 
       context: world-service
       dockerfile: Dockerfile
+    image: skaffold-dotnet-world:latest
+
     ports:
       - "8081:5002"
+  
+  hello:
+    restart: always
+    depends_on:
+      - world
+    build: 
+      context: hello-service
+      dockerfile: Dockerfile
+    image: skaffold-dotnet-hello:latest
+    ports:
+      - "8080:5001"
+    environment:
+      - MONGO_DB_ADDRESS=mongodb://database:27017
+      - WORLD_SERVICE_ADDRESS=http://world:5002

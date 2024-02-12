@@ -4,6 +4,54 @@ This repo is a practice on the continuous development concept using [Skaffold](h
 
 The objective is to create a scalable monolith. Treat hello-service as main container and world-service as a side-car container. The pod itself, although containing multiple containers, act as a single deployment of a microservice.   
 
+## Kickstarting without Skaffold
+
+1. We need to build docker image by our own first
+```
+// A script created for the build task
+./docker-build-upload-minikube.sh
+```
+
+2. Ensure the built images are loaded into Minikube's docker registry
+To view Minikube's docker registry:
+```
+// this will point current shell to Minibuke's docker deamon
+eval $(minikube -p minikube docker-env)
+docker images
+```
+In Minikube's docker image registry, the default images are:
+```
+REPOSITORY                                      TAG       IMAGE ID       CREATED         SIZE
+registry.k8s.io/kube-scheduler                  v1.28.3   42a4e73724da   3 months ago    57.8MB
+registry.k8s.io/kube-controller-manager         v1.28.3   8276439b4f23   3 months ago    116MB
+registry.k8s.io/kube-apiserver                  v1.28.3   537e9a59ee2f   3 months ago    120MB
+registry.k8s.io/kube-proxy                      v1.28.3   a5dd5cdd6d3e   3 months ago    68.3MB
+registry.k8s.io/metrics-server/metrics-server   <none>    24087ab2d904   6 months ago    66.9MB
+registry.k8s.io/etcd                            3.5.9-0   9cdd6470f48c   9 months ago    181MB
+registry.k8s.io/coredns/coredns                 v1.10.1   97e04611ad43   12 months ago   51.4MB
+registry.k8s.io/pause                           3.9       829e9de338bd   16 months ago   514kB
+kubernetesui/dashboard                          <none>    20b332c9a70d   17 months ago   244MB
+kubernetesui/metrics-scraper                    <none>    a422e0e98235   20 months ago   42.3MB
+gcr.io/k8s-minikube/storage-provisioner         v5        ba04bb24b957   2 years ago     29MB
+```
+
+// this command is IMPORTANT, otherwise kubernetes cannot pull the images
+```shell
+minikube image load skaffold-dotnet-hello:latest 
+minikube image load skaffold-dotnet-world:latest
+``` 
+
+3. Ensure manifest has `imagePullPolicy` set to `Never`, otherwise Minikube will try to pull image from Docker Hub registry
+```yaml
+containers:
+  - name: hello-containers
+    image: skaffold-dotnet-hello:latest
+    imagePullPolicy: Never
+```
+
+
+
+
 ## Kuberenete Concepts
 
 The `kubectl create` command can only create simple resources, it is not use for generating manifest files. In fact we need to create a manifest our own for complex resources and then feed into `kubectl apply` to actually create them on kubernetes cluster. 
