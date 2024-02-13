@@ -196,6 +196,10 @@ Namesapce is to isolate resources deployed to the same kubernetes cluster, typic
 - Services provide stable endpoints for accessing Pods, allowing intra-cluster communication. They can be of different types, such as ClusterIP for internal access or LoadBalancer/NodePort for external access.
 - Ingress resources define rules for routing external HTTP/HTTPS traffic to Services within the cluster based on criteria such as hostnames, paths, or request attributes.
 
+## Pod Scheduling
+
+Means when a pod created, the node assignment mechanism and criteria by Scheduler. Optimize resource utilization.
+
 ## Skaffold
 
 Now we have the service code in .NET, we have the manifest files and deploy to Kubernetes manually via `kubectl apply` command.

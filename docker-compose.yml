@@ -6,7 +6,6 @@ services:
       context: world-service
       dockerfile: Dockerfile
     image: skaffold-dotnet-world:latest
-
     ports:
       - "8081:5002"
   
