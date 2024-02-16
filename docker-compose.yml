@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     image: skaffold-dotnet-world:latest
     ports:
-      - "8081:5002"
+      - "8082:5002"
   
   hello:
     restart: always
@@ -18,7 +18,7 @@ services:
       dockerfile: Dockerfile
     image: skaffold-dotnet-hello:latest
     ports:
-      - "8080:5001"
+      - "8081:5001"
     environment:
       - MONGO_DB_ADDRESS=mongodb://database:27017
       - WORLD_SERVICE_ADDRESS=http://world:5002

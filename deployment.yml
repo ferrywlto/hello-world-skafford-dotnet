@@ -5,7 +5,7 @@ metadata:
 spec:
   # setting replicas desired state in manifest will disable temporary dynameic scaling by `kubectl scale` command 
   # in production env, update this replicas value in manifest file and then use `kubectl apply` to scale pod up/down
-  # replicas: 2
+  replicas: 2
   selector:
     matchLabels:
       app: skaffold-dotnet
@@ -19,7 +19,7 @@ spec:
           image: skaffold-dotnet-hello:latest
           imagePullPolicy: Never
           ports:
-          - containerPort: 8080
+          - containerPort: 5001
           resources:
             requests:
               memory: "64Mi"
@@ -31,7 +31,7 @@ spec:
           image: skaffold-dotnet-world:latest
           imagePullPolicy: Never
           ports:
-            - containerPort: 8081
+            - containerPort: 5002
           resources:
             requests:
               memory: "64Mi"
