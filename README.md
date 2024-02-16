@@ -4,6 +4,24 @@ This repo is a practice on the continuous development concept using [Skaffold](h
 
 The objective is to create a scalable monolith. Treat hello-service as main container and world-service as a side-car container. The pod itself, although containing multiple containers, act as a single deployment of a microservice.   
 
+In each pod there will be 3 containers:
+- Nginx that host the frontend static web-page
+- .NET8 API server
+- MongoDB
+
+## APIs
+
+There will be two REST API available:
+
+### `GET /hello/name`
+
+This API will get the list of who sent hello to the specified `name` since last query.
+
+### `POST /hello/name`
+
+This API will send hello to recipient `name`.
+
+
 ## Kickstarting without Skaffold
 
 1. We need to build docker image by our own first
