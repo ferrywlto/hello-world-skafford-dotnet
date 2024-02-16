@@ -67,7 +67,77 @@ containers:
     imagePullPolicy: Never
 ```
 
+## Accessing the app without Ingress
 
+### Accessing the containers by service
+
+By default the services defined and the corresponding containers inside pods are not accessible from outside of cluster.
+
+If service type is `NodePort`:
+
+Create tunnelling with `minikube service skaffold-dotnet`
+
+```
+ferry@MBP hello-world-skafford-dotnet % minikube service skaffold-dotnet
+|-----------|-----------------|-------------|---------------------------|
+| NAMESPACE |      NAME       | TARGET PORT |            URL            |
+|-----------|-----------------|-------------|---------------------------|
+| default   | skaffold-dotnet |        8082 | http://192.168.58.2:31888 |
+|-----------|-----------------|-------------|---------------------------|
+🏃  Starting tunnel for service skaffold-dotnet.
+|-----------|-----------------|-------------|------------------------|
+| NAMESPACE |      NAME       | TARGET PORT |          URL           |
+|-----------|-----------------|-------------|------------------------|
+| default   | skaffold-dotnet |             | http://127.0.0.1:60271 |
+|-----------|-----------------|-------------|------------------------|
+🎉  Opening service default/skaffold-dotnet in default browser...
+❗  Because you are using a Docker driver on darwin, the terminal needs to be open to run it.
+✋  Stopping tunnel for service skaffold-dotnet.
+```
+
+If service type is `LoadBalancer`:
+
+Creating tunnelling by `miuikube tunnel`:
+```
+ferryw@MBP hello-world-skafford-dotnet % minikube tunnel      
+✅  Tunnel successfully started
+
+📌  NOTE: Please do not close this terminal as this process must stay alive for the tunnel to be accessible ...
+
+🏃  Starting tunnel for service skaffold-dotnet.
+```
+
+Get exposed port from: `kubectl get svc`
+```
+ferry@MBP hello-world-skafford-dotnet % kubectl get svc
+NAME              TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
+kubernetes        ClusterIP      10.96.0.1        <none>        443/TCP          4d3h
+skaffold-dotnet   LoadBalancer   10.101.225.104   127.0.0.1     8082:31888/TCP   27h
+```
+
+### Accessing the containers by port forwarding
+
+To directly access particular pod: ` kubectl port-forward <pod_name> <host_port>:<container_port>`
+```
+ferry@MBP hello-world-skafford-dotnet % kubectl port-forward skaffold-dotnet-7f55cf7c69-n4w4d 5002:5002
+Forwarding from 127.0.0.1:5002 -> 5002
+Forwarding from [::1]:5002 -> 5002
+Handling connection for 5002
+Handling connection for 5002
+```
+
+### Expose the service to the Internet
+
+After tunnel created, use [Ngrok](https://ngrok.com/docs/using-ngrok-with/docker/) to bridge the Internet to cluster.
+
+`docker run -it -e NGROK_AUTHTOKEN=xyz ngrok/ngrok:latest http host.docker.internal:<exposed_port>`
+
+```
+docker run -it -e NGROK_AUTHTOKEN=2GGl7DqTPWxd9X7veEKaEm5aigT_7wx1onmg1DgET2LdA8Bhq ngrok/ngrok:latest http host.docker.internal:8082
+Forwarding  https://decb-173-244-49-57.ngrok-free.app -> http://host.docker.internal:8082 
+```
+
+We should able to call the service from the Internet now.
 
 
 ## Kuberenete Concepts
