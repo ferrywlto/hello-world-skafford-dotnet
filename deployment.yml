@@ -16,8 +16,8 @@ spec:
     spec:
       containers:
         - name: hello-containers
-          image: skaffold-dotnet-hello:latest
-          imagePullPolicy: Never
+          image: localhost:5000/skaffold-dotnet-hello:latest
+          imagePullPolicy: IfNotPresent
           ports:
           - containerPort: 5001
           resources:
@@ -28,8 +28,8 @@ spec:
               memory: "64Mi"
               cpu: "250m"
         - name: world-container
-          image: skaffold-dotnet-world:latest
-          imagePullPolicy: Never
+          image: localhost:5000/skaffold-dotnet-world:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5002
           resources:
