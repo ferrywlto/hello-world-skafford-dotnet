@@ -37,7 +37,7 @@ To view Minikube's docker registry:
 eval $(minikube -p minikube docker-env)
 docker images
 ```
-In Minikube's docker image registry, the default images are:
+In Minikube's docker engine repository, the default images are:
 ```
 REPOSITORY                                      TAG       IMAGE ID       CREATED         SIZE
 registry.k8s.io/kube-scheduler                  v1.28.3   42a4e73724da   3 months ago    57.8MB
@@ -67,6 +67,168 @@ containers:
     imagePullPolicy: Never
 ```
 
+## Multi-node Minikube Setup
+
+In order to simulate production environment, it is better to have at least two nodes up and running to view how the pods are assigned/scheduled to nodes.
+
+However using the approach in [previous section](#kickstarting-without-skaffold) will not work for multi-node cluster.
+
+This is because the pods across nodes not able to discover and resolve the image.
+
+Running `minikube docker-env` on a multi-node cluster will throw the error below:
+```
+ferry@MBP hello-world-skafford-dotnet % minikube docker-env
+
+❌  Exiting due to ENV_MULTINODE_CONFLICT: The docker-env command is incompatible with multi-node clusters. Use the 'registry' add-on: https://minikube.sigs.k8s.io/docs/handbook/registry/
+```
+
+We need to setup a docker image registry in the minikube cluster. In production since the images are probably pushed to DockerHub / GitHub Private Registry / Google Artifacts Registry etc, we don't need to setup our own registry. 
+
+### Enable Minikube Registry Addon
+
+In case things not working, delete the cluster and start all over to ensure things are clean and fresh.
+
+- Run `minikube addon enable registry` for existing cluster
+- Run `minikube start --addons registry` for new cluster
+
+```
+💡  registry is an addon maintained by minikube. For any concerns contact minikube on GitHub.
+You can view the list of minikube maintainers at: https://github.com/kubernetes/minikube/blob/master/OWNERS
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│                                                                                                      │
+│    Registry addon with docker driver uses port 62810 please use that instead of default port 5000    │
+│                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯
+📘  For more information see: https://minikube.sigs.k8s.io/docs/drivers/docker
+    ▪ Using image docker.io/registry:2.8.3
+    ▪ Using image gcr.io/k8s-minikube/kube-registry-proxy:0.0.5
+🔎  Verifying registry addon...
+🌟  The 'registry' addon is enabled
+```
+
+Ignore the port prompt, it is not related.
+
+### Verify the registry addon is running 
+
+Verify the registry and registry proxy pods are running. Note that there is only one registry pod for the whole cluster and a registry proxy per each node.
+
+This is because the registry pod was defined as a replication controller. While the registry proxy pods was defined as deamon sets.
+
+When receiving an image pull request when creating pods, if the request specify a specific registry `localhost:5000/your-app-image`, the registry proxy will intercept the request and forward to the registry service (see below).  Therefore when we create a deployment, make sure to specify the special `localhost:5000/` registry address in `image` field in manifest.  
+
+- Deployment Manifest
+```
+image: localhost:5000/skaffold-dotnet-hello:latest
+```
+- Pods
+```
+ferry@MBP hello-world-skafford-dotnet % minikube kubectl get pod -- -o wide --namespace kube-system
+NAME                               READY   STATUS    RESTARTS      AGE   IP             NODE           NOMINATED NODE   READINESS GATES
+registry-cnlbc                     1/1     Running   4 (16m ago)   16m   10.244.0.2     minikube       <none>           <none>
+registry-proxy-4mzjg               1/1     Running   1             16m   10.244.0.5     minikube       <none>           <none>
+registry-proxy-t7j8z               1/1     Running   1 (15m ago)   16m   10.244.1.2     minikube-m02   <none>           <none>
+```
+- Replication Controller
+```
+ferry@MBP hello-world-skafford-dotnet % minikube kubectl get rc -- -o wide --namespace kube-system | grep registry
+NAME       DESIRED   CURRENT   READY   AGE   CONTAINERS   IMAGES                     SELECTOR
+registry   1         1         1       29m   registry     docker.io/registry:2.8.3   kubernetes.io/minikube-addons=registry
+```
+- Deamon Sets
+```
+ferry@MBP hello-world-skafford-dotnet % minikube kubectl get ds -- -o wide --namespace kube-system
+NAME             DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE   CONTAINERS       IMAGES                                    SELECTOR
+registry-proxy   2         2         2       2            2           <none>          31m   registry-proxy   gcr.io/k8s-minikube/kube-registry-proxy   kubernetes.io/minikube-addons=registry,registry-proxy=true
+```
+- Service
+```
+ferry@MBP hello-world-skafford-dotnet % minikube kubectl get svc -- -o wide --namespace kube-system
+NAME             TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                  AGE   SELECTOR
+registry         ClusterIP   10.109.156.241   <none>        80/TCP,443/TCP           34m   actual-registry=true,kubernetes.io/minikube-addons=registry
+```
+
+Up to this point the images are still not able to pull yet. We need to push the image. 
+
+### Pushing image to registry service on Minikube
+
+- Create a port forwarding before push. Note that the service port is 80, not 5000. 
+
+```
+ferry@MBP hello-world-skafford-dotnet % minikube kubectl port-forward -- service/registry 5000:80 --namespace=kube-system
+Forwarding from 127.0.0.1:5000 -> 5000
+Forwarding from [::1]:5000 -> 5000
+Handling connection for 5000
+```
+
+- Verify the port-forwarding success. 
+```
+ferry@MBP hello-world-skafford-dotnet % curl http://localhost:5000/v2/_catalog
+{"repositories":[]}
+```
+
+- If the `curl` get a 403 response, this is because on MacOS the AirPlay service listen to port 5000 either, have to disable it as specified in [Apple Developer Forum](https://forums.developer.apple.com/forums/thread/693768).
+```
+**HTTP/1.1 403 Forbidden
+Content-Length: 0
+Server: AirTunes/595.13.1**
+```
+
+- Tag and push the image
+```
+ferry@MBP hello-world-skafford-dotnet % docker tag skaffold-dotnet-hello:latest localhost:5000/skaffold-dotnet-hello:latest
+ferry@MBP hello-world-skafford-dotnet % docker push localhost:5000/skaffold-dotnet-hello:latest
+The push refers to repository [localhost:5000/skaffold-dotnet-hello]
+Get "http://localhost:5000/v2/": dial tcp [::1]:5000: connect: connection refused
+```
+
+It still doesn't working.
+
+- **One more traffic redirection needed as told by [Minikube Handbook - Registry](https://minikube.sigs.k8s.io/docs/handbook/registry/), because of authentication and TLS stuff.**
+
+```
+docker run --rm -it --network=host alpine ash -c "apk add socat && socat TCP-LISTEN:5000,reuseaddr,fork TCP:$(minikube ip):5000"
+```
+
+The command sets up a temporary Alpine Linux container with the socat tool to forward traffic from port 5000 on the host machine to port 5000 on a Minikube VM.
+
+```
+ferry@MBP hello-world-skafford-dotnet % docker run --rm -it --network=host alpine ash -c "apk add socat && socat TCP-LISTEN:5000,reuseaddr,fork TCP:host.docker.internal:5000"
+
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.19/main/aarch64/APKINDEX.tar.gz
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.19/community/aarch64/APKINDEX.tar.gz
+(1/4) Installing ncurses-terminfo-base (6.4_p20231125-r0)
+(2/4) Installing libncursesw (6.4_p20231125-r0)
+(3/4) Installing readline (8.2.1-r2)
+(4/4) Installing socat (1.8.0.0-r0)
+Executing busybox-1.36.1-r15.trigger
+OK: 9 MiB in 19 packages
+```
+
+Try to push again and worked.
+
+```
+ferry@MBP hello-world-skafford-dotnet % docker push localhost:5000/skaffold-dotnet-hello:latest
+The push refers to repository [localhost:5000/skaffold-dotnet-hello]
+640f1a35ef85: Pushed 
+63ce94ea28ea: Pushed 
+e63ae026ff70: Pushed 
+61d98a5b18b3: Pushed 
+39e09b8de378: Pushed 
+4956fd172831: Pushed 
+7c504f21be85: Pushed 
+latest: digest: sha256:52dbca1de164b9fb729e4589192355dbfd410d13981856e98b0e47df1443464d size: 1787
+```
+
+Not really sure why port-forwarding is not working but socat works. Append ChatGPT result for future reference.
+
+> kubectl port-forward and socat are two different methods of forwarding network traffic, and they have different characteristics that can affect how they work with different types of traffic.
+>
+> kubectl port-forward forwards traffic from a local port to a port on a Kubernetes pod. It's a simple way to access a service running on a pod from your local machine. However, it's designed for interactive use and may not handle all types of network traffic correctly. In particular, it may have issues with HTTP/2 traffic, which Docker uses for pushing images.
+>
+> On the other hand, socat is a more general-purpose network utility that can forward almost any type of network traffic. It's more complex to set up than kubectl port-forward, but it can handle a wider range of network protocols and traffic patterns.
+>
+> When you use socat to forward traffic to a Docker registry, it's able to handle the HTTP/2 traffic used by Docker push operations. However, depending on how you've set it up, it may not be correctly forwarding HTTP traffic from your browser.
+
 ## Accessing the app without Ingress
 
 ### Accessing the containers by service
@@ -75,7 +237,8 @@ By default the services defined and the corresponding containers inside pods are
 
 If service type is `NodePort`:
 
-Create tunnelling with `minikube service skaffold-dotnet`
+Create port-forwarding with `minikube service skaffold-dotnet`. 
+Under the hood it run `kubectl port forward`.
 
 ```
 ferry@MBP hello-world-skafford-dotnet % minikube service skaffold-dotnet
