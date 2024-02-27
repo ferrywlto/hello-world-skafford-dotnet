@@ -1,8 +1,34 @@
+# Volume mounted config map update visible to pod immediately
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: skaffold-dotnet-configmap
+  name: skaffold-dotnet-configmap-mount
 data:
   # Define key-value pairs here
-  log_level: "debug"
+  bar: "foo"
+  # This should overriden by environment variable
+  which_config: "mount"
+
+---
+
+# Although volume mounted config map update live, but immutable one won't update unless a config map object deleted and recreated. 
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: skaffold-dotnet-configmap-mount-immutable
+data:
+  fix_config: "immutable"
+immutable: true
+
+---
+
+# ENV always have precedence, but changes won't reflect to pod until pod recreate 
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: skaffold-dotnet-configmap-env
+data:
+  # Define key-value pairs here
   foo: "bar"
+  # It should take precedence
+  which_config: "env"
