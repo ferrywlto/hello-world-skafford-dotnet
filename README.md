@@ -302,6 +302,37 @@ Forwarding  https://decb-173-244-49-57.ngrok-free.app -> http://host.docker.inte
 
 We should able to call the service from the Internet now.
 
+## ConfigMaps
+
+If a config map is exposed as environment variable, then in code we read as key-value pair
+
+```
+From env:
+- foo: bar
+- which_config: env
+```
+
+Config as environment variables changes won't reflect to pods until pod restart/recreate.
+
+
+If a config map is mounted as a volume, then each config value is a file with the key as file name and value as file content.
+
+From mounted volume:
+- file: bar
+- content: foo
+- file: which_config
+- content: mount
+```
+
+Mounted config changes will reflect to pods. 
+
+To prevent someone else accidentally updated the config values, set `immutable: true`
+
+Attempting to do so will see this error when `kubectl apply`:
+```
+The ConfigMap "skaffold-dotnet-configmap-mount-immutable" is invalid: data: Forbidden: field is immutable when `immutable` is set
+```
+
 
 ## Kuberenete Concepts
 
