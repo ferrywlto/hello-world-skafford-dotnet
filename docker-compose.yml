@@ -8,6 +8,8 @@ services:
     image: skaffold-dotnet-world:latest
     ports:
       - "8082:5002"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
   
   hello:
     restart: always

@@ -31,11 +31,41 @@ app.MapGet("/world", (HttpContext ctx) =>
     var localPort = ctx.Connection?.LocalPort.ToString();
     var remoteAddress = ctx.Connection?.RemoteIpAddress?.ToString();
     var remotePort = ctx.Connection?.RemotePort.ToString();
+
     var sb = new StringBuilder();
+    sb.AppendLine($"Environment: [{app.Environment.EnvironmentName}]");
     sb.AppendLine($"The world is {statuses[rng.Next(statuses.Length)]}.");
     sb.AppendLine($"Request Info: Local: {localAddress}:{localPort}, Remote: {remoteAddress}:{remotePort}");
-    sb.AppendLine($"Config Info: foo:{config["foo"]}");
-    
+
+    if(app.Environment.IsProduction())
+    {
+        sb.AppendLine($"Pod Name: {config["POD_NAME"]}");
+        sb.AppendLine($"""
+        Config Info: 
+        From env:
+        - foo: {config["foo"]}
+        - which_config: {config["which_config"]}
+        """);
+
+        // try to read mounted config file
+        var mountPath = "/etc/config";
+        if (Directory.Exists(mountPath))
+        {
+            sb.AppendLine($"From mounted volume:");
+            var files = Directory.GetFiles(mountPath);
+            foreach(var file in files)
+            {
+                var fileName = Path.GetFileName(file);
+                var content = File.ReadAllText(file);
+
+                sb.AppendLine($"""
+                - file: {fileName}
+                - content: {content}
+                """);
+            }
+        }
+
+    }
     return sb.ToString();
 })
 .WithName("World")

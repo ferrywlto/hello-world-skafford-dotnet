@@ -7,7 +7,7 @@ data:
   # Define key-value pairs here
   bar: "foo"
   # This should overriden by environment variable
-  which_config: "mount"
+  which_config: "mount_updated"
 
 ---
 
