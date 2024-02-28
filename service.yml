@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: skaffold-dotnet
 spec:
-  type: NodePort
+  type: LoadBalancer
   selector:
     app: skaffold-dotnet
   ports:
