@@ -40,6 +40,8 @@ app.MapGet("/world", (HttpContext ctx) =>
     if(app.Environment.IsProduction())
     {
         sb.AppendLine($"Pod Name: {config["POD_NAME"]}");
+        sb.AppendLine($"Pod Address: {config["POD_ADDRESS"]}");
+        sb.AppendLine($"Node Name: {config["NODE_NAME"]}");
         sb.AppendLine($"""
         Config Info: 
         From env:
