@@ -28,7 +28,7 @@ spec:
               memory: "16Mi"
               cpu: "10m"
         - name: world-container
-          image: localhost:5000/skaffold-dotnet-world:v0.0.5
+          image: localhost:5000/skaffold-dotnet-world:v0.0.6
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5002
@@ -45,6 +45,12 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+            - name: SECRET_DUMMY
+              valueFrom:
+                secretKeyRef:
+                  name: skaffold-dotnet-secret 
+                  key: dummy
+                  
           # Simulate same key loaded from different config map approach
           envFrom:
             - configMapRef:
@@ -52,6 +58,8 @@ spec:
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config
+            - name: secret-volume
+              mountPath: /etc/secret
           resources:
             requests:
               memory: "32Mi"
@@ -63,3 +71,6 @@ spec:
         - name: config-volume
           configMap:
             name: skaffold-dotnet-configmap-mount
+        - name: secret-volume
+          secret:
+            secretName: skaffold-dotnet-secret

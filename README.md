@@ -333,6 +333,16 @@ Attempting to do so will see this error when `kubectl apply`:
 The ConfigMap "skaffold-dotnet-configmap-mount-immutable" is invalid: data: Forbidden: field is immutable when `immutable` is set
 ```
 
+## Secrets
+
+If a secret was created in YAML manifest, the data need to be base64 encoded. Otherwise we will see below error when we `kubectl apply`:
+
+```
+Error from server (BadRequest): error when creating "secrets.yml": Secret in version "v1" cannot be handled as a Secret: illegal base64 data at input byte 5
+```
+
+On MacOS we can encode a string to base64 by: `echo "your_secret" | base64`
+
 
 ## Kuberenete Concepts
 
