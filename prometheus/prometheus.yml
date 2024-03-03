@@ -1,0 +1,10 @@
+scrape_configs:
+    # Monitor itself
+  - job_name: 'prometheus'
+    static_configs:
+    - targets: ['localhost:9090']
+      
+  - job_name: 'hello-metrics'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['host.docker.internal:8081']  # Replace 'webapi' with the hostname of your C# Web API service and the port with the one your Web API is running on

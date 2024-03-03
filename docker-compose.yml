@@ -1,5 +1,19 @@
 version: 3.8.0
 services:
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus
+  
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana:/var/lib/grafana
+
   world:
     restart: always
     build: 
@@ -24,3 +38,4 @@ services:
     environment:
       - MONGO_DB_ADDRESS=mongodb://database:27017
       - WORLD_SERVICE_ADDRESS=http://world:5002
+    
