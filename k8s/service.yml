@@ -1,7 +1,23 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: skaffold-dotnet
+  name: skaffold-dotnet-hello
+spec:
+  type: LoadBalancer
+  selector:
+    app: skaffold-dotnet
+  ports:
+    - protocol: TCP
+      port: 5001
+      targetPort: 5001
+  sessionAffinity: None   # Set sessionAffinity to "None" to disable session affinity
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: skaffold-dotnet-world
 spec:
   type: LoadBalancer
   selector:

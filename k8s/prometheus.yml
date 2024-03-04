@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+        - name: prometheus
+          image: prom/prometheus
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - name: prometheus-config-volume
+              mountPath: /etc/prometheus
+      volumes:
+        - name: prometheus-config-volume
+          configMap:
+            name: skaffold-dotnet-prometheus-config
+
+---
+
+# ENV always have precedence, but changes won't reflect to pod until pod recreate 
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: skaffold-dotnet-prometheus-config
+data:
+  prometheus.yml: |
+    global:
+      keep_dropped_targets: 100
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+        - targets: ['localhost:9090']
+          
+      - job_name: 'hello-metrics'
+        static_configs:
+        - targets: ['skaffold-dotnet-hello:5001']
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+spec:
+  selector:
+    app: prometheus
+  ports:
+    - protocol: TCP
+      port: 9090
+      targetPort: 9090
+
+--- 
+# Need the following RBAC stuff to enable Prometheus scrap metrics from pods
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cr-prometheus
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes
+  - services
+  - endpoints
+  - pods
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources:
+  - configmaps
+  verbs: ["get"]
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]
+
+--- 
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sa-prometheus
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cr-prometheus
+subjects:
+- kind: ServiceAccount
+  name: sa-prometheus
+  namespace: default

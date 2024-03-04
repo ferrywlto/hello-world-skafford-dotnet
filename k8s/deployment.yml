@@ -16,17 +16,17 @@ spec:
     spec:
       containers:
         - name: hello-containers
-          image: localhost:5000/skaffold-dotnet-hello:latest
+          image: localhost:5000/skaffold-dotnet-hello:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
           - containerPort: 5001
           resources:
             requests:
-              memory: "16Mi"
-              cpu: "10m"
+              memory: "32Mi"
+              cpu: "25m"
             limits:
-              memory: "16Mi"
-              cpu: "10m"
+              memory: "32Mi"
+              cpu: "50m"
         - name: world-container
           image: localhost:5000/skaffold-dotnet-world:v0.0.6
           imagePullPolicy: IfNotPresent
