@@ -39,7 +39,7 @@ data:
       - job_name: 'prometheus'
         static_configs:
         - targets: ['localhost:9090']
-          
+    # It turns out doesn't need to use service discovery and relabelling stuff
       - job_name: 'hello-metrics'
         static_configs:
         - targets: ['skaffold-dotnet-hello:5001']
@@ -51,6 +51,7 @@ kind: Service
 metadata:
   name: prometheus
 spec:
+  type: LoadBalancer
   selector:
     app: prometheus
   ports:
